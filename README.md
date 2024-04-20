@@ -3,6 +3,8 @@
 
 Update: Project is complete,  100% working! :)
 
+https://www.printables.com/model/850220-lulzbot-taz-6-x-linear-rails-mod
+
 Update: I have changed the design of the gantry and altered the files from the CAD model and added MGN15H linear rails, I will upload them when I'm confident they work as expected.
 
 I have printed a calibration cube, a cup, and a retraction settings test, and lots others.  All printed just fine, but as usual, make sure to check the pinout of your hardware. 

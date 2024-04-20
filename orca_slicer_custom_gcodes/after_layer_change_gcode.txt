@@ -1,0 +1,3 @@
+; LAYER: [layer_num], Z HEIGHT: [layer_z]
+; {if layer_num == 0}M600 ; Color change {endif}
+TIMELAPSE_TAKE_FRAME

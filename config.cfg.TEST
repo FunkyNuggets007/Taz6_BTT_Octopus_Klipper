@@ -1,0 +1,830 @@
+# See docs/Config_Reference.md for a description of parameters.
+# MACROS AT THE BOTTOM OF THE CONFIG 
+# WIPE NOZZLE USES 3 DIFFERENT PATHS BASED ON VARIABLE NUMBER IN variables.cfg  
+# IF YOU USE SENSORLESS HOMING, REMEMBERR TO UNPLUG THE PHYSICAL SWITCHES
+# !!!! RENAME THIS FILE TO PRINTER.CFG BEFORE USING !!!!!
+
+##################### TUNES FOR UPCOMING SPEAKER INSTALL  
+##################### https://github.com/rootiest/zippy-klipper_config/blob/master/macros/tunes.cfg 
+##################### https://www.reddit.com/r/klippers/comments/qmwfw0/how_to_attach_a_buzzerbeeper_skr_14_pi3b_5/  
+##################### https://github.com/rootiest/zippy-klipper_config/tree/master/macros
+
+[include moonraker_obico_macros.cfg]
+[include mainsail.cfg] 
+[include timelapse.cfg] #https://www.obico.io/blog/klipper-timelapse/
+[include input_shaper.cfg]
+[save_variables]
+filename: ~/variables.cfg ; variable storage file
+
+[exclude_object]
+
+[mcu]
+serial: /dev/serial/by-id/usb-Klipper_stm32f446xx_370048001451313133353932-if00
+
+# Enable arcs support, FOR ORCA SLICER
+[gcode_arcs]
+resolution: 0.1
+
+[pause_resume]
+
+[display_status]
+
+
+
+
+[printer]
+kinematics: cartesian
+max_velocity: 450
+max_accel: 2500
+max_z_velocity: 2.75
+max_z_accel: 12
+square_corner_velocity: 5
+
+
+[idle_timeout] 
+timeout: 36000
+gcode:
+    {% if printer.pause_resume.is_paused %}
+        M118 Bypassed Timeout
+        M117 Bypassed Timeout
+    {% else %}
+        M118 Timeout Reached
+        M117 Timeout Reached
+        TURN_OFF_HEATERS
+        M84
+    {% endif %}
+
+
+
+[filament_switch_sensor RunoutSensor]
+pause_on_runout: False
+runout_gcode:
+    M117 Out of Filament
+    M600
+event_delay: 3.0
+pause_delay: 0.5
+switch_pin: !PG12 #J28 on schematic
+insert_gcode: {action_respond_info("RUNOUT: Filament inserted")}
+
+
+[virtual_sdcard]
+path: ~/printer_data/gcodes
+#/home/pi/printer_data/gcodes
+
+
+# Motor 0 on schematic
+[stepper_x]
+step_pin: PF13
+dir_pin: !PF12
+enable_pin: !PF14
+microsteps: 16
+rotation_distance: 32
+endstop_pin: tmc2209_stepper_x:virtual_endstop  #^PG6 #J27 on schematic
+position_endstop: -20
+position_min: -20
+position_max: 300
+homing_speed: 20
+homing_retract_dist: 0
+
+
+[tmc2209 stepper_x]
+uart_pin: PC4
+diag_pin: ^PG6
+driver_SGTHRS: 60 # highest value is 255 Most sensitive, 0 is the lest sensitive
+run_current: 0.950
+stealthchop_threshold: 1
+
+
+
+# Motor 1 on schematic
+[stepper_y]
+step_pin: PG0
+dir_pin: PG1
+enable_pin: !PF15
+microsteps: 16
+rotation_distance: 32
+endstop_pin: tmc2209_stepper_y:virtual_endstop #PG9 #J29 on schematic
+position_endstop: -20
+position_min: -20
+position_max: 300
+homing_speed: 20
+homing_retract_dist: 0
+
+
+[tmc2209 stepper_y]
+uart_pin: PD11
+diag_pin: PG9
+driver_SGTHRS: 70 # highest value is 255 Most sensitive, 0 is the lest sensitive
+run_current: 0.950
+stealthchop_threshold: 1
+
+
+# Motor 2.1 on schematic
+[stepper_z]
+step_pin: PF11
+dir_pin: !PG3
+enable_pin: !PG5
+microsteps: 16
+rotation_distance: 2
+#endstop_pin: PG10 #J31 on schematic
+endstop_pin: probe:z_virtual_endstop
+position_max: 270
+position_min: -8
+
+
+[tmc2209 stepper_z]
+uart_pin: PC6
+#diag_pin: PG10
+run_current: 1.350
+stealthchop_threshold: 1
+
+
+# Motor 2.2 on schematic
+# The Octopus only has 4 heater outputs which leaves an extra stepper
+# This can be used for a second Z stepper, dual_carriage, extruder co-stepper,
+# or other accesory such as an MMU
+[stepper_z1]
+step_pin: PG4
+dir_pin: !PC1
+enable_pin: PA0
+microsteps: 16
+rotation_distance: 2
+#endstop_pin: PG11
+#...
+
+
+[tmc2209 stepper_z1]
+uart_pin: PC7
+#diag_pin: PG11
+run_current: 1.350
+stealthchop_threshold: 1
+
+
+# Motor 4 on schematic
+[extruder]  #DRIVER4_Motor_3
+step_pin: PF9 
+dir_pin: PF10
+enable_pin: !PG2
+heater_pin: PA2 # HE0
+sensor_pin:  PF4
+microsteps: 16
+rotation_distance: 8.1794508 # old value: 8.012 ##Change this for your printer. How to: https://www.klipper3d.org/Rotation_Distance.html
+nozzle_diameter: 0.400
+filament_diameter: 1.750
+sensor_type: ATC Semitec 104NT-4-R025H42G
+max_extrude_only_distance: 750.0
+max_extrude_only_velocity: 75.0
+max_extrude_only_accel: 1000.0
+min_extrude_temp: 170
+min_temp: 5
+max_temp: 300
+max_extrude_cross_section: 5
+
+
+[tmc2209 extruder]
+uart_pin: PF2
+run_current: .900
+hold_current: 0.500
+stealthchop_threshold: 1
+
+
+[heater_bed] 
+heater_pin: PA1 #24v output
+sensor_pin: PF3 #TB #J44 on schematic
+sensor_type: Honeywell 100K 135-104LAG-J01
+control: pid
+pid_Kp: 162.0
+pid_Ki: 17.0
+pid_Kd: 378.0
+min_temp: 0
+max_temp: 130
+
+ 
+#[output_pin beeper]
+#pin: EXP1_1
+
+
+# A [probe] section can be defined instead with a pin: setting identical
+# to the sensor_pin: for a bltouch
+[bltouch]
+sensor_pin: ^PB7 #J43 on schematic
+control_pin: PB6
+#z_offset: 0.1
+x_offset: -42.5
+y_offset: -6.1
+speed: 15.0
+pin_up_touch_mode_reports_triggered: False
+stow_on_each_sample: false
+samples: 2
+samples_result: median
+sample_retract_dist: 4.0
+samples_tolerance: 0.03
+samples_tolerance_retries: 3
+probe_with_touch_mode: True
+set_output_mode: 5V
+
+[bed_mesh]
+speed: 750
+horizontal_move_z: 7   #initial height for starting bed calibration
+mesh_min: 35, 6
+mesh_max: 240, 240
+probe_count: 4, 4
+
+
+[safe_z_home]
+home_xy_position: 170, 135 # Change coordinates to the center of your print bed
+speed: 500
+z_hop: 5                 # Move up 10mm after Z homing/referencing
+z_hop_speed: 15.0
+move_to_previous: false
+
+[heater_fan Upper_Case_Fan]
+pin: PE5 #J51 on schematic
+max_power: 1.0
+shutdown_speed: 0
+heater: heater_bed
+heater_temp: 40.0
+hardware_pwm: False
+kick_start_time: 0
+fan_speed: 0.9
+
+
+[fan_generic extruder]
+pin: PD12 #J52 on schematic
+
+
+
+
+
+
+
+#############################################################################
+                                    # MACROS #
+#############################################################################
+
+
+
+
+
+
+#############################################################################
+                             # inputshaper macros start #
+#############################################################################
+ 
+[gcode_macro ADXL_Head]
+description: test resonances in x direction / of the hotend
+gcode:
+  M118 DO NOT TOUCH THE PRINTER UNTIL DONE!!!
+ {% if 'xy' not in printer.toolhead.homed_axes %}   G28
+  {% endif %}		#or g28 if you dont have a macro to check if you orinter is homed
+  SHAPER_CALIBRATE AXIS=x
+  RUN_SHELL_COMMAND CMD=adxl_x
+  M118 Test done
+  SAVE_CONFIG
+ 
+[gcode_macro ADXL_Bed]
+description: test resonances in y direction / of the heated bed
+gcode:
+  M118 DO NOT TOUCH THE PRINTER UNTIL DONE!!!
+  {% if 'xy' not in printer.toolhead.homed_axes %}
+  G28
+  {% endif %}		#or g28
+  SHAPER_CALIBRATE AXIS=y
+  RUN_SHELL_COMMAND CMD=adxl_y
+  M118 Test done
+  SAVE_CONFIG
+ 
+[gcode_shell_command adxl_x]
+command: sh /home/biqu/printer_data/config/adxl_x.sh	
+# edit: ´klipper_config/macro/shell_commands/´ to where your .sh file lays
+ 
+timeout: 60.
+verbose: True
+ 
+[gcode_shell_command adxl_y]
+command: sh /home/biqu/printer_data/config/adxl_y.sh		
+# edit: ´klipper_config/macro/shell_commands/´ to where your .sh file lays
+timeout: 60.
+verbose: True
+
+#############################################################################
+                             # inputshaper macros end #
+#############################################################################
+
+
+
+########################################
+# START_PRINT MACRO
+########################################
+[gcode_macro START_PRINT]
+gcode:
+ BED_MESH_PROFILE LOAD=default
+ M107 ; disable fans
+ G90 ; absolute positioning
+ {% set BED_TEMP = params.BED_TEMP|default(60)|float %}
+ {% set EXTRUDER_TEMP = params.EXTRUDER_TEMP|default(190)|float %}
+ M82 ; set extruder to absolute mode
+ G92 E0 ; set extruder position to 0
+ M117 Heating Things Up
+ M118 Heating Things Up !
+ M104 S{EXTRUDER_TEMP} ; start heating extruder
+ M190 S{BED_TEMP} ; wait for bed temperature
+ G1 F1000 E-3 ; retract filament 3 mm to prevent oozing
+ M117 Wiping Nozzle
+ M118 Determining Nozzle Wipe Path, Then Wiping
+ WIPE ; clean nozzle
+ LEVEL_BED_ADVANCED ; levels bed based on how many prints have completed
+ M204 S1000 ; set accel back to normal
+ G1 X0 Y150 Z15 F5000 ; get out the way
+ M400 ; clear buffer
+ M117 Clearing Buffer
+ M117 Pause For Buffer
+ G4 S5 ; pause for buffer clear
+ M117 Priming Nozzle
+ M118 Purging Filament To The Bed Surface
+ PRIME_NOZZLE ; do two lines at base of the bed
+ M117 AutoBots, Roll Out!
+ M118 AutoBots, Roll Out ! ! !
+
+
+########################################
+# END_PRINT MACRO
+########################################
+[gcode_macro END_PRINT]
+gcode:
+ M400 ; wait for moves to finish
+ M104 S0 ; hotend off
+ M107 ; fans off
+ G91 ; relative positioning
+ G1 E-1 F300 ; retract the filament a bit before lifting the nozzle, to release some of the pressure
+ G1 Z+5 X-20 Y-20 F4000 ; move Z up a bit
+ M117 Cooling please wait
+ G90 ; absolute positioning
+ M140 S0 ; set bed to cool off
+ G1 Y280 F3000 ; present finished print
+ SAVE_IF_SET ; SAVE_CONFIG if a mesh was probed in START_PRINT
+ M84 ; steppers off
+ G90 ; absolute positioning
+ M117 Print Complete!
+ M118 Print Complete ! ! !
+
+########################################
+# Runs SAVE_CONFIG if the g-code variable was set in start gcode
+########################################
+[gcode_macro SAVE_IF_SET]
+gcode:
+  {% if printer["gcode_macro LEVEL_BED_ADVANCED"].save_at_end == 1 %}
+  {action_respond_info("Saving was requested - saving and restarting now.")}
+  SAVE_VARIABLE VARIABLE=level_age VALUE=1
+  SAVE_CONFIG
+  {% endif %}
+
+
+########################################
+# Wipe Nozzle Macros, Using Variables, Use Multiple Paths
+#########################################
+[gcode_macro WIPE]
+description: Checks to see if alternative wipe line is needed
+variable_save_at_end: 0
+gcode:
+  ; load wipe_age from stored variables
+  {% set svv = printer.save_variables.variables %}
+  {% if "wipe_age" not in svv %} ; first run
+    SAVE_VARIABLE VARIABLE=wipe_age VALUE=1
+    {% set wipe_age = 1 %}
+  {% else %} ; load wipe_age and increment
+    {% set wipe_age = svv.wipe_age %}
+    SAVE_VARIABLE VARIABLE=wipe_age VALUE={wipe_age|int + 1}
+    {% endif %}
+  {action_respond_info("Wipe Age Is " + wipe_age|string) + "."}  
+  {% if wipe_age == 1 %}
+    {action_respond_info("Wipe Macro 1")} 
+    WIPE_1
+  {% endif %} 
+  {% if wipe_age == 2 %}
+    {action_respond_info("Wipe Macro 2")} 
+    WIPE_2
+  {% endif %} 
+  {% if wipe_age >= 3 %}
+    {action_respond_info("Reset Wipe Counter")} 
+    SAVE_VARIABLE VARIABLE=wipe_age VALUE=1 ; reset counter
+    {action_respond_info("Wipe Macro 3")} 
+    WIPE_3
+  {% endif %} 
+
+
+########################################
+# CHECK WHICH VARIABLE # IS BEING USED TO DETERMINE WIPE PATH
+########################################
+[gcode_macro CHECK_WIPE_AGE]
+description: Current nunmber in the variable file is output on the Console screen
+gcode:
+ {% set svv = printer.save_variables.variables %}
+ {% set wipe_age = svv.wipe_age %}
+ {action_respond_info("Nozzle Wipe is currently using Path Number " + wipe_age|string) + "."}  
+
+
+########################################
+# G29, BED LEVELING/PROBING, MACRO
+########################################
+; This is where the magic happens:
+; MAX_AGE is checked against the stored variable
+; SAVE=1 can be used to force saving the mesh (restarts klipper, so only for manual usage)
+; FORCE_LEVEL=1 forces a mesh probe even if MAX_AGE is not reached
+[gcode_macro LEVEL_BED_ADVANCED]
+description: Levels the bed if the last leveling was MAX_AGE runs ago. Force leveling by setting FORCE
+variable_save_at_end: 0
+gcode:
+  {% set max_age = params.MAX_AGE|default(10)|int %}
+  {% set force_level = params.FORCE|default(0)|int %}
+  {% set save = params.SAVE|default(0)|int %}
+
+  ; load level_age from stored variables
+  {% set svv = printer.save_variables.variables %}
+  {% if "level_age" not in svv %} ; first run
+    SAVE_VARIABLE VARIABLE=level_age VALUE={max_age}
+    {% set level_age = 1 %}
+  {% else %} ; load level_age and increment
+    {% set level_age = svv.level_age %}
+    SAVE_VARIABLE VARIABLE=level_age VALUE={level_age|int + 1}
+  {% endif %}
+  {action_respond_info("Bed mesh age is " + level_age|string) + "."} 
+
+  ; Level eventually
+  {% if force_level or (level_age >= max_age|int) %}
+    {action_respond_info("Bed mesh exceeded max age. Leveling...")} 
+
+    ; homing if not homed yet
+    {% if 'xy' not in printer.toolhead.homed_axes %}
+    G28
+    {% endif %}
+  
+   BED_MESH_CALIBRATE
+      SAVE_VARIABLE VARIABLE=level_age VALUE=1 ; reset counter
+    {% if save %}
+      SAVE_CONFIG
+    {% else %}
+      SET_GCODE_VARIABLE MACRO=LEVEL_BED_ADVANCED VARIABLE=save_at_end VALUE=1
+    {% endif %}
+  {% else %}
+    {action_respond_info("Loading old bed mesh.")} 
+    BED_MESH_PROFILE LOAD=default
+  {% endif %} 
+
+
+########################################
+# CHECK WHICH VARIABLE # IS STORED IN VARIABLE FILE FOR BED LEVELING
+########################################
+[gcode_macro CHECK_LEVEL_AGE]
+description: Current nunmber in the variable file is output on the Console screen
+gcode:
+ {% set svv = printer.save_variables.variables %}
+    {% set level_age = svv.level_age %}
+ {action_respond_info("Number of Prints since last Bed Probing is " + level_age|string) + "."}  
+
+
+########################################
+# M106, TURN FANS ON, MACRO
+########################################
+[gcode_macro M106]
+gcode:
+    {% if params.S is defined %}
+      {% if params.S|int == 255 %}
+        {% set realspeed = 1 %}
+      {% else %}
+        {% if params.S|int == 0 %}
+          {% set realspeed = 0 %}
+        {% else %}
+          {% set realspeed = 0.0039*params.S|int %}
+        {% endif %}
+      {% endif %}
+    {% else %}
+      {% set realspeed = 1 %}
+    {% endif %}
+
+    {% if params.P is defined %}
+        SET_FAN_SPEED FAN=extruder{params.P|int} SPEED={realspeed}
+    {% else %}
+        SET_FAN_SPEED FAN=extruder SPEED={realspeed}
+    {% endif %}
+
+
+########################################
+# M107, TURN FANS OFF, MACRO
+########################################
+[gcode_macro M107]
+gcode:
+    {% if params.P is defined %}
+      SET_FAN_SPEED FAN=extruder{params.P|int} SPEED=0      
+    {% else %}
+      SET_FAN_SPEED FAN=extruder SPEED=0    
+    {% endif %}
+
+
+
+  
+
+
+
+
+########################################
+# WIPE #1, FRONT LEFT PAD, PREP NOZZLE MACRO
+########################################
+[gcode_macro WIPE_1]
+description: Wipe the nozzle before printing
+gcode:
+  M117 Wiping Macro 1
+  {% if 'xy' not in printer.toolhead.homed_axes %}
+  G28
+  {% endif %}
+  G1 Z15                        ; raise nozzle
+  G1 X-19 Y95 F2000            ; move to safe homing position
+  M117 Wiping Filament
+  G1 E-.5 F100                   ; suck up XXmm of filament
+  G1 X-17 Y90 F3000            ; move above wiper pad
+  G1 Z0.1                       ; push nozzle into wiper
+  G1 X-17 Y85 F1000            ; slow wipe
+  G1 X-17 Y80 F1000            ; slow wipe
+  G1 X-17 Y85 F1000            ; slow wipe
+  G1 X-19 Y80 F1000            ; slow wipe
+  G1 X-17 Y80 F1000            ; slow wipe
+  G1 X-19 Y70 F1000            ; slow wipe
+  G1 X-17 Y75 F2000            ; fast wipe
+  G1 X-19 Y70 F2000            ; fast wipe
+  G1 X-17 Y65 F2000            ; fast wipe
+  G1 X-19 Y60 F2000            ; fast wipe
+  G1 X-17 Y55 F2000            ; fast wipe
+  G1 X-19 Y50 F2000            ; fast wipe
+  G1 X-17 Y45 F2000            ; fast wipe
+  G1 X-19 Y40 F2000            ; fast wipe
+  G1 X-17 Y35 F2000            ; fast wipe
+  G1 X-19 Y25 F2000            ; fast wipe
+  G1 X-17 Y35 F2000            ; fast wipe
+  G1 X-19 Y40 F2000            ; fast wipe
+  G1 X-17 Y35 F2000            ; fast wipe
+  G1 X-19 Y40 F2000            ; fast wipe
+  G1 X-17 Y35 F2000            ; fast wipe
+  G1 E1 F75                    ; extrude filament back into the  nozzle
+  G1 X-19 Y30 Z3.0 F1000       ; slow wipe
+  G1 X-17 Y20 F1000            ; slow wipe
+  G1 Z20                        ; raise extruder
+  M204 S1000                     ; set accel for probing
+  
+########################################
+# WIPE #2, FRONT LEFT PAD, PREP NOZZLE MACRO
+########################################
+[gcode_macro WIPE_2]
+description: Wipe the nozzle before printing
+gcode:
+  M117 Wiping Macro 2
+  {% if 'xy' not in printer.toolhead.homed_axes %}
+  G28
+  {% endif %}
+  G1 Z15                        ; raise nozzle
+  G1 X-19 Y95 F2000            ; move to safe homing position
+  M117 Wiping Filament
+  G1 E-.5 F100                   ; suck up XXmm of filament
+  G1 X-17 Y90 F3000            ; move above wiper pad
+  G1 Z0.1                       ; push nozzle into wiper
+  G1 X-17 Y85 F1000            ; slow wipe
+  G1 X-17 Y80 F1000            ; slow wipe
+  G1 X-17 Y85 F1000            ; slow wipe
+  G1 X-15 Y80 F1000            ; slow wipe
+  G1 X-17 Y80 F1000            ; slow wipe
+  G1 X-15 Y70 F1000            ; slow wipe
+  G1 X-17 Y75 F2000            ; fast wipe
+  G1 X-15 Y70 F2000            ; fast wipe
+  G1 X-17 Y65 F2000            ; fast wipe
+  G1 X-15 Y60 F2000            ; fast wipe
+  G1 X-17 Y55 F2000            ; fast wipe
+  G1 X-15 Y50 F2000            ; fast wipe
+  G1 X-17 Y45 F2000            ; fast wipe
+  G1 X-15 Y40 F2000            ; fast wipe
+  G1 X-17 Y35 F2000            ; fast wipe
+  G1 X-15 Y25 F2000            ; fast wipe
+  G1 X-17 Y35 F2000            ; fast wipe
+  G1 X-15 Y40 F2000            ; fast wipe
+  G1 X-17 Y35 F2000            ; fast wipe
+  G1 X-15 Y40 F2000            ; fast wipe
+  G1 X-17 Y35 F2000            ; fast wipe
+  G1 E1 F75                    ; extrude filament back into the  nozzle
+  G1 X-15 Y30 Z3.0 F1000       ; slow wipe
+  G1 X-17 Y20 F1000            ; slow wipe
+  G1 Z20                        ; raise extruder
+  M204 S1000                     ; set accel for probing
+  
+########################################
+# WIPE FRONT LEFT PAD, PREP NOZZLE MACRO
+########################################
+[gcode_macro WIPE_3]
+description: Wipe the nozzle before printing
+gcode:
+  M117 Wiping Macro 3
+  {% if 'xy' not in printer.toolhead.homed_axes %}
+  G28
+  {% endif %}
+  G1 Z15                        ; raise nozzle
+  G1 X-19 Y95 F2000            ; move to safe homing position
+  M117 Wiping Filament
+  G1 E-.5 F100                   ; suck up XXmm of filament
+  G1 X-17 Y90 F3000            ; move above wiper pad
+  G1 Z0.1                       ; push nozzle into wiper
+  G1 X-13 Y85 F1000            ; slow wipe
+  G1 X-13 Y80 F1000            ; slow wipe
+  G1 X-13 Y85 F1000            ; slow wipe
+  G1 X-15 Y80 F1000            ; slow wipe
+  G1 X-13 Y80 F1000            ; slow wipe
+  G1 X-15 Y70 F1000            ; slow wipe
+  G1 X-13 Y75 F2000            ; fast wipe
+  G1 X-15 Y70 F2000            ; fast wipe
+  G1 X-13 Y65 F2000            ; fast wipe
+  G1 X-15 Y60 F2000            ; fast wipe
+  G1 X-13 Y55 F2000            ; fast wipe
+  G1 X-15 Y50 F2000            ; fast wipe
+  G1 X-13 Y45 F2000            ; fast wipe
+  G1 X-15 Y40 F2000            ; fast wipe
+  G1 X-13 Y35 F2000            ; fast wipe
+  G1 X-15 Y25 F2000            ; fast wipe
+  G1 X-13 Y35 F2000            ; fast wipe
+  G1 X-15 Y40 F2000            ; fast wipe
+  G1 X-13 Y35 F2000            ; fast wipe
+  G1 X-15 Y40 F2000            ; fast wipe
+  G1 X-13 Y35 F2000            ; fast wipe
+  G1 E1 F75                    ; extrude filament back into the  nozzle
+  G1 X-15 Y30 Z3.0 F1000       ; slow wipe
+  G1 X-13 Y20 F1000            ; slow wipe
+  G1 Z20                        ; raise extruder
+  M204 S1000                     ; set accel for probing
+
+
+########################################
+# PAUSE MACRO
+########################################
+[gcode_macro PAUSE]
+description: Pause the actual running print
+rename_existing: PAUSE_BASE
+gcode:
+ PAUSE_BASE
+  TOOLHEAD_PARK_PAUSE_CANCEL
+
+
+########################################
+# RESUME MACRO
+########################################
+[gcode_macro RESUME]
+description: Resume the actual running print
+rename_existing: RESUME_BASE
+gcode:
+  ##### read extrude from  TOOLHEAD_PARK_PAUSE_CANCEL  macro #####
+  {% set extrude = printer['gcode_macro TOOLHEAD_PARK_PAUSE_CANCEL'].extrude %}
+  #### get VELOCITY parameter if specified ####
+  {% if 'VELOCITY' in params|upper %}
+    {% set get_params = ('VELOCITY=' + params.VELOCITY)  %}
+  {%else %}
+    {% set get_params = "" %}
+  {% endif %}
+  ##### end of definitions #####
+  {% if printer.extruder.can_extrude|lower == 'true' %}
+    M83
+    G1 E{extrude} F2100
+    {% if printer.gcode_move.absolute_extrude |lower == 'true' %} M82 {% endif %}
+  {% else %}
+    {action_respond_info("Extruder not hot enough")}
+  {% endif %}  
+  RESUME_BASE {get_params}
+
+
+########################################
+# CANCEL PRINT MACRO
+########################################
+[gcode_macro CANCEL_PRINT]
+description: Cancel the actual running print
+rename_existing: CANCEL_PRINT_BASE
+variable_park: True
+gcode:
+  M107
+  ## Move head and retract only if not already in the pause state and park set to true
+  {% if printer.pause_resume.is_paused|lower == 'false' and park|lower == 'true'%}
+    TOOLHEAD_PARK_PAUSE_CANCEL
+  {% endif %}
+  TURN_OFF_HEATERS
+  CANCEL_PRINT_BASE
+  M84
+
+
+########################################
+# TOOL HEAD PARK PAUSE CANCEL MACRO
+########################################
+[gcode_macro TOOLHEAD_PARK_PAUSE_CANCEL]
+description: Helper: park toolhead used in PAUSE and CANCEL_PRINT
+variable_extrude: 1.0
+gcode:
+  ##### set park positon for x and y #####
+  # default is your max position from your printer.cfg
+  {% set x_park = printer.toolhead.axis_maximum.x - 130|float - 5.0 %}
+  {% set y_park = printer.toolhead.axis_maximum.y - 5|float - 5.0 %}
+  {% set z_park_delta = 2.0 %}
+  ##### calculate save lift position #####
+  {% set max_z = printer.toolhead.axis_maximum.z|float %}
+  {% set act_z = printer.toolhead.position.z|float %}
+  {% if act_z < (max_z - z_park_delta) %}
+    {% set z_safe = z_park_delta %}
+  {% else %}
+    {% set z_safe = max_z - act_z %}
+  {% endif %}
+  ##### end of definitions #####
+  {% if printer.extruder.can_extrude|lower == 'true' %}
+    M83
+    G1 E-{extrude} F2100
+    {% if printer.gcode_move.absolute_extrude |lower == 'true' %} M82 {% endif %}
+  {% else %}
+    {action_respond_info("Extruder not hot enough")}
+  {% endif %}
+  {% if "xyz" in printer.toolhead.homed_axes %}
+    G91
+    G1 Z{z_safe} F900
+    G90
+    G1 X{x_park} Y{y_park} F4000
+    {% if printer.gcode_move.absolute_coordinates|lower == 'false' %} G91 {% endif %}
+  {% else %}
+    {action_respond_info("Printer not homed")}
+  {% endif %}
+
+
+########################################
+# FILAMENT CHANGE MACRO
+########################################
+[gcode_macro M600]
+gcode:
+    {% set X = params.X|default(50)|float %}
+    {% set Y = params.Y|default(0)|float %}
+    {% set Z = params.Z|default(10)|float %}
+    SAVE_GCODE_STATE NAME=M600_state
+    PAUSE
+    G91
+    G1 E-.8 F2700
+    G1 Z{Z}
+    G90
+    G1 X{X} Y{Y} F3000
+    G91
+    G1 E-10 F1000
+    RESTORE_GCODE_STATE NAME=M600_state
+
+
+########################################
+# PRIME NOZZLE, DRAW TWO LINES, MACRO
+########################################
+[gcode_macro PRIME_NOZZLE]
+gcode:
+    SAVE_GCODE_STATE NAME=PRIME_NOZZLE_STATE
+    M117 Priming Nozzle
+    G90                 ; Absolute coordinates.
+    M83                 ; Relative extruder mode.
+    G92 E0
+    ; Move to start of line.
+    G1 Z10 F900
+    G1 Y3 X55 F3500
+    G1 Z0.2 F900
+    ; Print the line.
+    G91                ; Relative coordinates.
+    G1 X100 E25 F900  ; Extrude filament 25mm (how much it retracted in PRINT_END).
+    G1 Y2 F1000
+    G1 X-100 E9 F900    ; Print second part of the line.
+    G1 Y-1 F1000
+    RESTORE_GCODE_STATE NAME=PRIME_NOZZLE_STATE
+
+#*# <---------------------- SAVE_CONFIG ---------------------->
+#*# DO NOT EDIT THIS BLOCK OR BELOW. The contents are auto-generated.
+#*#
+#*# [bltouch]
+#*# z_offset = 2.410
+#*#
+#*# [extruder]
+#*# control = pid
+#*# pid_kp = 32.394
+#*# pid_ki = 3.660
+#*# pid_kd = 71.672
+#*#
+#*# [input_shaper]
+#*# shaper_type_x = 2hump_ei
+#*# shaper_freq_x = 72.8
+#*# shaper_type_y = ei
+#*# shaper_freq_y = 29.0
+#*#
+#*# [bed_mesh default]
+#*# version = 1
+#*# points =
+#*# 	  0.150937, 0.080312, -0.010938, -0.121250
+#*# 	  0.213437, 0.105625, -0.004375, -0.128125
+#*# 	  0.157187, 0.064375, -0.018750, -0.123750
+#*# 	  0.026250, -0.006250, -0.047188, -0.106563
+#*# x_count = 4
+#*# y_count = 4
+#*# mesh_x_pps = 2
+#*# mesh_y_pps = 2
+#*# algo = lagrange
+#*# tension = 0.2
+#*# min_x = 35.0
+#*# max_x = 239.99
+#*# min_y = 6.0
+#*# max_y = 240.0
